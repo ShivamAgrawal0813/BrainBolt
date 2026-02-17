@@ -1,0 +1,59 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.table thead {
+  background-color: var(--color-surface-alt);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.table th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.row {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition-fast);
+}
+
+.row:hover {
+  background-color: var(--color-surface);
+}
+
+.rank {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  padding: var(--spacing-md);
+  width: 60px;
+  text-align: center;
+}
+
+.username {
+  padding: var(--spacing-md);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.value {
+  padding: var(--spacing-md);
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+  text-align: right;
+}
+
+.empty,
+.error {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.error {
+  color: var(--color-error);
+}

@@ -1,12 +1,10 @@
 node_modules
 dist
-coverage
 .env
 .env.*
-*.log
 .git
 .gitignore
-README.md
-**/__tests__
-**/*.test.ts
-**/*.spec.ts
+*.md
+src/**/__tests__
+src/**/*.test.ts
+jest.config.js

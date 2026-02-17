@@ -183,6 +183,7 @@ router.post('/answer', async (req, res, next) => {
             if (redis) {
                 const cached = await redis.get(idemRedisKey);
                 if (cached) {
+                    logger.info({ userId, idempotencyKey: idemKeyHeader }, 'Idempotency cache hit — returning cached answer response');
                     return res.json(JSON.parse(cached));
                 }
             }
@@ -190,19 +191,11 @@ router.post('/answer', async (req, res, next) => {
             logger.warn({ err, userId }, 'redis idempotency read failed (continuing)');
         }
 
-        // 3️⃣ Load user state (Redis first)
+        // 3️⃣ Load user state — ALWAYS from DB for optimistic lock accuracy
+        //    Redis cache may be stale; the DB state_version is the source of truth.
         const userKey = `user:${userId}:state`;
         let userStateRow: any = null;
-        try {
-            if (redis) {
-                const s = await redis.get(userKey);
-                if (s) userStateRow = s && JSON.parse(s);
-            }
-        } catch (err) {
-            logger.warn({ err, userId }, 'redis read failed for user state (falling back to DB)');
-        }
-
-        if (!userStateRow) {
+        {
             const r = await pool.query('SELECT * FROM user_state WHERE user_id = $1', [userId]);
             if (r.rowCount === 0) {
                 // create default state if missing
@@ -281,7 +274,6 @@ router.post('/answer', async (req, res, next) => {
             before: aeInput,
             after: newState
         }, 'ADAPTIVE ENGINE RESULT');
-d
 
         // compute scoreDelta (difference between clamped totals)
         const scoreDelta = newState.totalScore - aeInput.totalScore;

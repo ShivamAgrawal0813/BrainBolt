@@ -42,7 +42,7 @@ export const PERFORMANCE_WINDOW_SIZE = 10;
 export const MIN_STREAK_FOR_INCREASE = 2;
 
 export const CONFIDENCE_HIGH = 0.7;
-export const CONFIDENCE_LOW = 0.3;
+export const CONFIDENCE_LOW = 0.5;
 
 export const BASE_SCORE_MULTIPLIER = 10;
 export const STREAK_CAP_MULTIPLIER = 2.0;
@@ -52,7 +52,7 @@ export const CONFIDENCE_ALPHA = 0.1;
 export const CONFIDENCE_WINDOW_WEIGHT = 0.2;
 
 export const WINDOW_ACCURACY_FOR_INCREASE = 0.6;
-export const WINDOW_ACCURACY_FOR_DECREASE = 0.4;
+export const WINDOW_ACCURACY_FOR_DECREASE = 0.5;
 
 export const ACCURACY_BONUS_THRESHOLD = 0.8;
 export const ACCURACY_BONUS_PCT = 0.2;

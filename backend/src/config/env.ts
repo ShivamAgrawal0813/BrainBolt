@@ -28,6 +28,7 @@ export const env = {
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   JWT_SECRET: JWT_SECRET as string, // guaranteed non-empty by validation above
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '1h',
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
 } as const;
 
 // Optional: warn in development environments
