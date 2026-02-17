@@ -3,7 +3,7 @@
  * Used only when REDIS_URL is set.
  */
 import Redis from 'ioredis';
-import { env } from '../config/env';
+import { env } from '../config/env.js';
 
 let redis: Redis | null = null;
 

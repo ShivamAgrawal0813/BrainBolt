@@ -47,11 +47,18 @@ services:
       dockerfile: Dockerfile
     container_name: brainbolt-backend
     restart: unless-stopped
+    # Load secrets and environment-specific settings from external .env file
+    # This approach keeps sensitive data (JWT_SECRET) out of version control
+    # and allows flexible configuration across development/staging/production
+    env_file:
+      - .env
+    # Base environment variables (can be overridden by .env)
     environment:
       NODE_ENV: development
       PORT: 3001
       DATABASE_URL: postgres://brainbolt:brainbolt@postgres:5432/brainbolt
       REDIS_URL: redis://redis:6379
+      SEED: "true"
     ports:
       - "3001:3001"
     depends_on:
