@@ -80,7 +80,7 @@ app.get('/health', async (_req, res) => {
   res.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'degraded', details: health });
 });
 
-// POST /answers/submit — idempotent, rate-limited, transactional
+// POST /answers/submit — legacy endpoint (kept for backward compatibility)
 app.post('/answers/submit', async (req, res, next) => {
   try {
     const out = await submitAnswer(req.body);
@@ -89,6 +89,10 @@ app.post('/answers/submit', async (req, res, next) => {
     next(err);
   }
 });
+
+// Mount new quiz v1 routes
+import quizRouter from './routes/quiz';
+app.use('/v1/quiz', quizRouter);
 
 // error handler
 app.use((err: any, _req: any, res: any, _next: any) => {
