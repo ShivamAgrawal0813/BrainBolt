@@ -71,6 +71,23 @@ services:
     networks:
       - brainbolt-network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+    container_name: brainbolt-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    mem_limit: 512m
+    cpus: '0.5'
+    networks:
+      - brainbolt-network
+
 volumes:
   postgres_data:
   redis_data:

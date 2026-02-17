@@ -1,35 +1,24 @@
 /**
- * 404 Page — shown when no route matches
+ * 404 Not Found Page
  */
 
 import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import styles from './error.module.css';
 
-export default function NotFoundPage() {
+export default function NotFound() {
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-            <Card>
-                <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-md)', color: 'var(--color-text)' }}>
-                    404 — Page Not Found
-                </h2>
-                <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
-                    The page you are looking for does not exist.
+        <div className={styles.container}>
+            <div className={styles.content}>
+                <span className={styles.icon}>🔍</span>
+                <h1 className={styles.title}>Page Not Found</h1>
+                <p className={styles.description}>
+                    The page you&apos;re looking for doesn&apos;t exist or has been moved.
                 </p>
-                <Link
-                    href="/"
-                    style={{
-                        display: 'inline-block',
-                        padding: 'var(--spacing-sm) var(--spacing-lg)',
-                        backgroundColor: 'var(--color-primary)',
-                        color: '#fff',
-                        borderRadius: 'var(--radius-md)',
-                        fontWeight: 'var(--font-weight-medium)',
-                        textDecoration: 'none',
-                    }}
-                >
-                    Go Home
+                <Link href="/">
+                    <Button>Go Home</Button>
                 </Link>
-            </Card>
+            </div>
         </div>
     );
 }

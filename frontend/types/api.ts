@@ -55,6 +55,7 @@ export interface AnswerResponse {
 
 export interface LeaderboardEntry {
   userId: string;
+  username?: string;
   totalScore?: number;
   maxStreak?: number;
   rank?: number;

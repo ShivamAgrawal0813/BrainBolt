@@ -1,6 +1,7 @@
 /**
  * Leaderboard Table Component
  * Client component that fetches leaderboard data using React Query
+ * Features: Medals for top 3, username display, hover effects
  */
 
 'use client';
@@ -15,6 +16,12 @@ interface LeaderboardTableProps {
   type: 'score' | 'streak';
 }
 
+const MEDAL_MAP: Record<number, string> = {
+  1: '🥇',
+  2: '🥈',
+  3: '🥉',
+};
+
 export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({ type }) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['leaderboard', type],
@@ -22,7 +29,7 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({ type }) => {
       type === 'score'
         ? apiClient.getLeaderboardScore(10)
         : apiClient.getLeaderboardStreak(10),
-    refetchInterval: 30000, // auto-refresh every 30s for near-realtime
+    refetchInterval: 30000,
   });
 
   if (isLoading) {
@@ -34,29 +41,43 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({ type }) => {
   }
 
   if (!data?.leaderboard || data.leaderboard.length === 0) {
-    return <div className={styles.empty}>No entries yet</div>;
+    return <div className={styles.empty}>No entries yet. Be the first!</div>;
   }
 
   return (
-    <table className={styles.table}>
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>User</th>
-          <th>{type === 'score' ? 'Score' : 'Streak'}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.leaderboard.map((entry, index) => (
-          <tr key={entry.userId} className={styles.row}>
-            <td className={styles.rank}>{entry.rank ?? index + 1}</td>
-            <td className={styles.username}>{entry.userId}</td>
-            <td className={styles.value}>
-              {type === 'score' ? entry.totalScore : entry.maxStreak}
-            </td>
+    <div className={styles.tableWrapper}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th className={styles.thRank}>#</th>
+            <th>Player</th>
+            <th className={styles.thValue}>{type === 'score' ? 'Score' : 'Streak'}</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {data.leaderboard.map((entry, index) => {
+            const rank = entry.rank ?? index + 1;
+            const medal = MEDAL_MAP[rank];
+            const displayName = entry.username || entry.userId;
+
+            return (
+              <tr key={entry.userId} className={`${styles.row} ${rank <= 3 ? styles.topThree : ''}`}>
+                <td className={styles.rankCell}>
+                  {medal ? (
+                    <span className={styles.medal}>{medal}</span>
+                  ) : (
+                    <span className={styles.rankNum}>{rank}</span>
+                  )}
+                </td>
+                <td className={styles.nameCell}>{displayName}</td>
+                <td className={styles.valueCell}>
+                  {type === 'score' ? entry.totalScore?.toLocaleString() : entry.maxStreak}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 };

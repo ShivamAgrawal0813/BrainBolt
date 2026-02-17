@@ -1,20 +1,11 @@
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--color-surface-alt) 0%,
-    var(--color-border) 50%,
-    var(--color-surface-alt) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-  border-radius: var(--radius-md);
-}
+/* ── Skeleton Loader ──────────────────────────────────────────────────── */
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+.skeleton {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg,
+      var(--color-surface-alt) 25%,
+      var(--color-border-light) 50%,
+      var(--color-surface-alt) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
 }

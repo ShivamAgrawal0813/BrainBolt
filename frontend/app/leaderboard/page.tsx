@@ -1,8 +1,6 @@
 /**
- * Leaderboard Page - SSR
- * Displays top users by score and streak
- * This is the SSR page required by the spec; LeaderboardTable is a client component
- * that fetches data with React Query for interactivity.
+ * Leaderboard Page
+ * Displays top users by score and streak with premium design
  */
 
 import Link from 'next/link';
@@ -20,26 +18,27 @@ export const metadata: Metadata = {
 export default function LeaderboardPage() {
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Leaderboards</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Leaderboards</h1>
+        <p className={styles.subtitle}>See who&apos;s dominating the quiz</p>
+      </div>
 
       <div className={styles.grid}>
-        {/* Score Leaderboard */}
-        <Card>
-          <h2 className={styles.sectionTitle}>🏆 Top Scores</h2>
+        <Card className={styles.boardCard}>
+          <div className={styles.boardHeader}>
+            <span className={styles.boardIcon}>🏆</span>
+            <h2 className={styles.boardTitle}>Top Scores</h2>
+          </div>
           <LeaderboardTable type="score" />
         </Card>
 
-        {/* Streak Leaderboard */}
-        <Card>
-          <h2 className={styles.sectionTitle}>⚡ Best Streaks</h2>
+        <Card className={styles.boardCard}>
+          <div className={styles.boardHeader}>
+            <span className={styles.boardIcon}>⚡</span>
+            <h2 className={styles.boardTitle}>Best Streaks</h2>
+          </div>
           <LeaderboardTable type="streak" />
         </Card>
-      </div>
-
-      <div className={styles.footer}>
-        <Link href="/quiz" className={styles.backLink}>
-          ← Back to Quiz
-        </Link>
       </div>
     </div>
   );

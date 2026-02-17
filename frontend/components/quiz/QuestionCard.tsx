@@ -1,5 +1,5 @@
 /**
- * Question Card Component
+ * Question Card Component — with difficulty progress bar
  */
 
 import React from 'react';
@@ -14,11 +14,19 @@ interface QuestionCardProps {
 
 export const QuestionCard = React.memo<QuestionCardProps>(
   ({ difficulty, prompt, isLoading = false }) => {
+    const fillPercent = (difficulty / 10) * 100;
+
     return (
       <Card className={styles.card}>
         {!isLoading && (
           <div className={styles.difficulty}>
             <span className={styles.badge}>Level {difficulty}</span>
+            <div className={styles.difficultyBar}>
+              <div
+                className={styles.difficultyFill}
+                style={{ width: `${fillPercent}%` }}
+              />
+            </div>
           </div>
         )}
         <h2 className={styles.prompt}>{prompt}</h2>

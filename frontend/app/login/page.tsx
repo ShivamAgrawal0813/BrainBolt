@@ -3,26 +3,26 @@
  */
 
 import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
 import { LoginForm } from '@/components/auth/LoginForm';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
   return (
-    <div className={styles.authContainer}>
-      <Card className={styles.authCard}>
-        <h1 className={styles.title}>Sign In</h1>
-        <p className={styles.subtitle}>Enter your credentials to access BrainBolt</p>
+    <div className={styles.pageContainer}>
+      <div className={styles.authCard}>
+        <div className={styles.authHeader}>
+          <span className={styles.authIcon}>🔐</span>
+          <h1 className={styles.authTitle}>Welcome Back</h1>
+          <p className={styles.authSubtitle}>Sign in to continue your quiz journey</p>
+        </div>
 
         <LoginForm />
 
-        <p className={styles.footer}>
+        <p className={styles.authFooter}>
           Don&apos;t have an account?{' '}
-          <Link href="/register" className={styles.link}>
-            Create an account
-          </Link>
+          <Link href="/register">Create one free</Link>
         </p>
-      </Card>
+      </div>
     </div>
   );
 }

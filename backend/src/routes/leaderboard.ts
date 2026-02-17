@@ -59,7 +59,7 @@ export async function updateLeaderboards(userId: string, totalScore: number, max
     await updateLeaderboardsDb(client, userId, totalScore, maxStreak);
     await client.query('COMMIT');
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
+    try { await client.query('ROLLBACK'); } catch (_) { }
     throw err;
   } finally {
     client.release();
@@ -116,6 +116,21 @@ function parseLimitOffset(q: any) {
   return { limit, offset };
 }
 
+// Helper to resolve usernames for a list of user IDs via a single batch query
+async function resolveUsernames(pool: any, userIds: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (!pool || userIds.length === 0) return map;
+  try {
+    const r = await pool.query('SELECT id, username FROM users WHERE id = ANY($1)', [userIds]);
+    for (const row of r.rows) {
+      map.set(String(row.id), row.username);
+    }
+  } catch (err) {
+    logger.warn({ err }, 'Failed to resolve usernames for leaderboard');
+  }
+  return map;
+}
+
 // GET /v1/leaderboard/score
 router.get('/score', async (req, res, next) => {
   try {
@@ -128,13 +143,18 @@ router.get('/score', async (req, res, next) => {
       if (redis) {
         const range = await redis.zrevrange('leaderboard:score', offset, offset + limit - 1, 'WITHSCORES');
         if (Array.isArray(range) && range.length > 0) {
-          const leaderboard: Array<{ rank: number; userId: string; totalScore: number }> = [];
+          const userIds: string[] = [];
+          const entries: Array<{ rank: number; userId: string; totalScore: number }> = [];
           for (let i = 0; i < range.length; i += 2) {
             const userId = range[i];
             const scoreStr = range[i + 1];
             const index = i / 2;
-            leaderboard.push({ rank: offset + index + 1, userId, totalScore: Number(scoreStr) });
+            userIds.push(userId);
+            entries.push({ rank: offset + index + 1, userId, totalScore: Number(scoreStr) });
           }
+          // Resolve usernames from DB
+          const usernameMap = await resolveUsernames(pool, userIds);
+          const leaderboard = entries.map((e) => ({ ...e, username: usernameMap.get(e.userId) || e.userId }));
           return res.json({ leaderboard, pagination: { limit, offset } });
         }
       }
@@ -142,10 +162,21 @@ router.get('/score', async (req, res, next) => {
       logger.warn({ err }, 'Redis leaderboard read failed — falling back to DB');
     }
 
-    // Fallback to Postgres
+    // Fallback to Postgres — JOIN with users table for usernames
     if (!pool) throw new Error('Database not configured');
-    const r = await pool.query('SELECT user_id, total_score FROM leaderboard_score ORDER BY total_score DESC LIMIT $1 OFFSET $2', [limit, offset]);
-    const leaderboard = r.rows.map((row: any, idx: number) => ({ rank: offset + idx + 1, userId: String(row.user_id), totalScore: Number(row.total_score) }));
+    const r = await pool.query(
+      `SELECT ls.user_id, ls.total_score, u.username
+       FROM leaderboard_score ls
+       LEFT JOIN users u ON u.id = ls.user_id
+       ORDER BY ls.total_score DESC LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+    const leaderboard = r.rows.map((row: any, idx: number) => ({
+      rank: offset + idx + 1,
+      userId: String(row.user_id),
+      username: row.username || String(row.user_id),
+      totalScore: Number(row.total_score),
+    }));
     res.json({ leaderboard, pagination: { limit, offset } });
   } catch (err) {
     next(err);
@@ -163,13 +194,18 @@ router.get('/streak', async (req, res, next) => {
       if (redis) {
         const range = await redis.zrevrange('leaderboard:streak', offset, offset + limit - 1, 'WITHSCORES');
         if (Array.isArray(range) && range.length > 0) {
-          const leaderboard: Array<{ rank: number; userId: string; maxStreak: number }> = [];
+          const userIds: string[] = [];
+          const entries: Array<{ rank: number; userId: string; maxStreak: number }> = [];
           for (let i = 0; i < range.length; i += 2) {
             const userId = range[i];
             const streakStr = range[i + 1];
             const index = i / 2;
-            leaderboard.push({ rank: offset + index + 1, userId, maxStreak: Number(streakStr) });
+            userIds.push(userId);
+            entries.push({ rank: offset + index + 1, userId, maxStreak: Number(streakStr) });
           }
+          // Resolve usernames from DB
+          const usernameMap = await resolveUsernames(pool, userIds);
+          const leaderboard = entries.map((e) => ({ ...e, username: usernameMap.get(e.userId) || e.userId }));
           return res.json({ leaderboard, pagination: { limit, offset } });
         }
       }
@@ -177,10 +213,21 @@ router.get('/streak', async (req, res, next) => {
       logger.warn({ err }, 'Redis leaderboard (streak) read failed — falling back to DB');
     }
 
-    // Fallback to Postgres
+    // Fallback to Postgres — JOIN with users table for usernames
     if (!pool) throw new Error('Database not configured');
-    const r = await pool.query('SELECT user_id, max_streak FROM leaderboard_streak ORDER BY max_streak DESC LIMIT $1 OFFSET $2', [limit, offset]);
-    const leaderboard = r.rows.map((row: any, idx: number) => ({ rank: offset + idx + 1, userId: String(row.user_id), maxStreak: Number(row.max_streak) }));
+    const r = await pool.query(
+      `SELECT ls.user_id, ls.max_streak, u.username
+       FROM leaderboard_streak ls
+       LEFT JOIN users u ON u.id = ls.user_id
+       ORDER BY ls.max_streak DESC LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+    const leaderboard = r.rows.map((row: any, idx: number) => ({
+      rank: offset + idx + 1,
+      userId: String(row.user_id),
+      username: row.username || String(row.user_id),
+      maxStreak: Number(row.max_streak),
+    }));
     res.json({ leaderboard, pagination: { limit, offset } });
   } catch (err) {
     next(err);

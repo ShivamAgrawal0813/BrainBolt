@@ -1,41 +1,45 @@
+/* ── Quiz Page Styles ─────────────────────────────────────────────────── */
+
 .container {
   display: flex;
-  align-items: flex-start;
   justify-content: center;
-  min-height: 80vh;
+  padding: var(--spacing-xl) 0;
 }
 
 .content {
   width: 100%;
-  max-width: 800px;
+  max-width: 720px;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 200px;
+  height: 300px;
   color: var(--color-text-muted);
   font-size: var(--font-size-lg);
 }
 
-/* Answer Feedback */
+/* ── Answer Feedback ──────────────────────────────────────────────────── */
 .feedback {
   padding: var(--spacing-lg);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   margin: var(--spacing-lg) 0;
   text-align: center;
-  transition: all var(--transition-base);
+  border: 1.5px solid transparent;
 }
 
 .feedback[data-correct="true"] {
   background-color: var(--color-success-light);
-  border: 2px solid var(--color-success);
+  border-color: var(--color-success);
+  animation: correctPulse 0.6s ease-out;
 }
 
 .feedback[data-correct="false"] {
   background-color: var(--color-error-light);
-  border: 2px solid var(--color-error);
+  border-color: var(--color-error);
+  animation: wrongShake 0.5s ease-out;
 }
 
 .feedbackHeader {
@@ -57,31 +61,43 @@
   gap: var(--spacing-xl);
   justify-content: center;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
 }
 
+.feedbackDetails span {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+}
+
+/* ── Navigation Links ─────────────────────────────────────────────────── */
 .nav {
   display: flex;
   gap: var(--spacing-lg);
-  margin-top: var(--spacing-xl);
+  margin-top: var(--spacing-2xl);
   justify-content: center;
 }
 
 .navLink {
   padding: var(--spacing-sm) var(--spacing-lg);
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
   font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
   text-decoration: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
   transition: all var(--transition-fast);
 }
 
 .navLink:hover {
   background-color: var(--color-surface);
-  color: var(--color-primary-dark);
+  color: var(--color-primary);
+  border-color: var(--color-primary-ghost);
+  box-shadow: var(--shadow-sm);
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .nav {
     flex-direction: column;

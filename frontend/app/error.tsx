@@ -1,14 +1,13 @@
 /**
- * Error Boundary — catches runtime errors in the app
+ * Error Boundary Page
  */
 
 'use client';
 
-import React from 'react';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import styles from './error.module.css';
 
-export default function ErrorPage({
+export default function Error({
     error,
     reset,
 }: {
@@ -16,16 +15,15 @@ export default function ErrorPage({
     reset: () => void;
 }) {
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-            <Card>
-                <h2 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-md)', color: 'var(--color-error)' }}>
-                    Something went wrong
-                </h2>
-                <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
-                    {error.message || 'An unexpected error occurred.'}
+        <div className={styles.container}>
+            <div className={styles.content}>
+                <span className={styles.icon}>⚠️</span>
+                <h1 className={styles.title}>Something went wrong</h1>
+                <p className={styles.description}>
+                    An unexpected error occurred. Please try again.
                 </p>
                 <Button onClick={reset}>Try Again</Button>
-            </Card>
+            </div>
         </div>
     );
 }

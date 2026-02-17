@@ -1,57 +1,95 @@
+/* ── Leaderboard Table ────────────────────────────────────────────────── */
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--font-size-sm);
 }
 
-.table thead {
-  background-color: var(--color-surface-alt);
-  border-bottom: 2px solid var(--color-border);
+.table thead tr {
+  border-bottom: 2px solid var(--color-border-light);
 }
 
 .table th {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   text-align: left;
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
+.thRank {
+  width: 50px;
+  text-align: center;
+}
+
+.thValue {
+  text-align: right;
+}
+
+/* Rows */
 .row {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-light);
   transition: background-color var(--transition-fast);
 }
 
 .row:hover {
-  background-color: var(--color-surface);
+  background-color: var(--color-primary-ghost);
 }
 
-.rank {
+.row:last-child {
+  border-bottom: none;
+}
+
+.topThree {
+  background-color: var(--color-primary-ghost);
+}
+
+/* Cells */
+.rankCell {
+  padding: var(--spacing-md);
+  text-align: center;
+  width: 50px;
+}
+
+.medal {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.rankNum {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+}
+
+.nameCell {
+  padding: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.valueCell {
+  padding: var(--spacing-md);
+  text-align: right;
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
-  padding: var(--spacing-md);
-  width: 60px;
-  text-align: center;
 }
 
-.username {
-  padding: var(--spacing-md);
-  color: var(--color-text);
-  font-weight: var(--font-weight-medium);
-}
-
-.value {
-  padding: var(--spacing-md);
-  color: var(--color-success);
-  font-weight: var(--font-weight-bold);
-  text-align: right;
-}
-
+/* Empty / Error */
 .empty,
 .error {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
   text-align: center;
   color: var(--color-text-muted);
-  font-style: italic;
+  font-size: var(--font-size-sm);
 }
 
 .error {

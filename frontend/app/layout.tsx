@@ -5,7 +5,13 @@
 import '@/styles/tokens.css';
 import styles from './layout.module.css';
 import Providers from './providers';
-import type { Metadata } from 'next';
+import { Navbar } from '@/components/ui/Navbar';
+import type { Metadata, Viewport } from 'next';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: 'BrainBolt — Adaptive Infinite Quiz',
@@ -13,7 +19,6 @@ export const metadata: Metadata = {
     'Challenge yourself with BrainBolt, an adaptive infinite quiz that adjusts difficulty in real-time. Compete on leaderboards and track your performance.',
   keywords: ['quiz', 'adaptive', 'brain', 'leaderboard', 'math', 'challenge'],
   authors: [{ name: 'BrainBolt Team' }],
-  viewport: 'width=device-width, initial-scale=1',
 };
 
 export default function RootLayout({
@@ -22,15 +27,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>
-          <div className={styles.container}>
-            <header className={styles.header}>
-              <h1 className={styles.logo}>⚡ BrainBolt</h1>
-            </header>
-            <main className={styles.main}>{children}</main>
-          </div>
+          <Navbar />
+          <main className={styles.main}>{children}</main>
         </Providers>
       </body>
     </html>
