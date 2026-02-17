@@ -13,7 +13,7 @@ import {
   STREAK_DECAY_MS,
   type UserState,
 } from '../adaptiveEngine';
-
+/// <reference types="jest" />
 // =============================================================================
 // HELPERS
 // =============================================================================
@@ -464,12 +464,19 @@ describe('Edge cases', () => {
     expect(next.currentDifficulty).toBeLessThanOrEqual(5);
   });
 
-  it('totalScore can go negative with many wrong answers', () => {
-    let s = state({ currentDifficulty: 5, totalScore: 10 });
-    for (let i = 0; i < 5; i++) {
-      s = processAnswer(s, false, 1000 + i);
-    }
-    expect(s.totalScore).toBeLessThanOrEqual(10);
+  it('totalScore can be reduced but is clamped to 0 (never negative)', () => {
+    // start with small totalScore and apply a strong penalty (high difficulty)
+    let s = state({ currentDifficulty: 10, totalScore: 5 });
+
+    // calculateScore would return a negative delta for wrong answers at high difficulty
+    const penalty = calculateScore(10, false, 0, 0).scoreDelta;
+    expect(penalty).toBeLessThan(0);
+
+    // apply a wrong answer that would take the total below 0
+    s = processAnswer(s, false, 1000);
+    // totalScore must be clamped to 0 and never negative
+    expect(s.totalScore).toBeGreaterThanOrEqual(0);
+    expect(s.totalScore).toBe(0);
   });
 
   it('performanceWindow grows then stays at 10', () => {

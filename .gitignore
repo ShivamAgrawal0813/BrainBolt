@@ -21,6 +21,5 @@ frontend/out/
 Thumbs.db
 
 docs
-docker-compose.yml
 frontend
 README.md

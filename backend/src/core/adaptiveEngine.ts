@@ -224,9 +224,17 @@ export function calculateScore(
 
 /**
  * Process one answer. Fully immutable; does not mutate input state.
+ *
  * Order: streak decay → update streak → update window → window accuracy →
  * update confidence → update difficulty → calculate score (using OLD difficulty) →
  * update totals → return new state.
+ *
+ * NOTE: calculateScore may return a negative scoreDelta for wrong answers
+ * (penalty). The returned UserState must never allow totalScore to drop
+ * below zero because the persistent store enforces `total_score >= 0`.
+ * Therefore we apply a clamp only to the final `totalScore` field here
+ * (Math.max(0, ...)). We do NOT modify `scoreDelta` itself so the penalty
+ * remains auditable and deterministic.
  */
 export function processAnswer(
   state: UserState,
@@ -268,11 +276,15 @@ export function processAnswer(
     windowAccuracy
   );
 
+  // IMPORTANT: clamp totalScore at 0 to satisfy DB constraint while keeping
+  // the scoreDelta unchanged for auditing and downstream logic.
+  const clampedTotal = Math.max(0, state.totalScore + scoreDelta);
+
   return {
     currentDifficulty: newDifficulty,
     streak: newStreak,
     maxStreak: newMaxStreak,
-    totalScore: state.totalScore + scoreDelta,
+    totalScore: clampedTotal,
     confidence: newConfidence,
     performanceWindow: newWindow,
     correctAnswers: state.correctAnswers + (isCorrect ? 1 : 0),
