@@ -2,10 +2,16 @@
  * Home Page — Premium Landing
  */
 
+'use client';
+
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
 
 export default function Home() {
+  const { state } = useAuth();
+  const { isAuthenticated } = state;
+
   return (
     <div className={styles.hero}>
       {/* Gradient orbs background */}
@@ -27,12 +33,19 @@ export default function Home() {
         </p>
 
         <div className={styles.actions}>
-          <Link href="/register" className={styles.ctaPrimary} id="cta-register">
-            Start Playing →
+          <Link
+            href={isAuthenticated ? "/quiz" : "/register"}
+            className={styles.ctaPrimary}
+            id="cta-primary"
+          >
+            {isAuthenticated ? 'Continue Playing →' : 'Start Playing →'}
           </Link>
-          <Link href="/login" className={styles.ctaSecondary} id="cta-login">
-            I have an account
-          </Link>
+
+          {!isAuthenticated && (
+            <Link href="/login" className={styles.ctaSecondary} id="cta-login">
+              I have an account
+            </Link>
+          )}
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import { logger } from '../logger';
 import { BadRequest, Conflict, TooManyRequests, ApiError } from '../errors';
 import { updateLeaderboardsDb, updateLeaderboardsRedis } from './leaderboard';
 import * as AE from '../core/adaptiveEngine';
+import { rateLimiter } from '../middleware/rateLimit';
 
 const router = express.Router();
 
@@ -41,7 +42,7 @@ function mapDbRowToState(row: any): AE.UserState & { stateVersion: number; lastQ
 }
 
 // GET /v1/quiz/next
-router.get('/next', async (req, res, next) => {
+router.get('/next', rateLimiter(60, 60), async (req, res, next) => {
     try {
         const user = (req as any).user;
 
@@ -143,7 +144,7 @@ router.get('/next', async (req, res, next) => {
 });
 
 // POST /v1/quiz/answer
-router.post('/answer', async (req, res, next) => {
+router.post('/answer', rateLimiter(30, 60), async (req, res, next) => {
     let client: any = null;
     let updatedStateVersion: number | null = null;
     try {
@@ -159,21 +160,6 @@ router.post('/answer', async (req, res, next) => {
         const pool = getPool();
         if (!pool) throw new ApiError(500, 'Database not configured', 'INTERNAL_ERROR');
         const redis = getRedis();
-
-        // 1️⃣ Rate Limit
-        try {
-            if (redis) {
-                const rlKey = `ratelimit:answer:${userId}`;
-                const cur = await redis.incr(rlKey);
-                if (cur === 1) await redis.expire(rlKey, RATE_LIMIT_WINDOW);
-                if (cur > RATE_LIMIT_MAX) throw TooManyRequests('rate limit exceeded');
-            }
-        } catch (err) {
-            // If Redis is unavailable, rate limiting degrades gracefully.
-            // This preserves availability but may allow temporary bursts.
-            if (err instanceof ApiError) throw err;
-            logger.warn({ err, userId }, 'rate limit check failed (allowing request)');
-        }
 
         // 2️⃣ Idempotency check
         const idemKeyHeader = req.header('Idempotency-Key');
@@ -460,7 +446,7 @@ router.post('/answer', async (req, res, next) => {
 });
 
 // GET /v1/quiz/metrics
-router.get('/metrics', async (req, res, next) => {
+router.get('/metrics', rateLimiter(60, 60), async (req, res, next) => {
     try {
         const user = (req as any).user;
         if (!user || !user.id) throw new ApiError(401, 'Unauthorized', 'UNAUTHORIZED');

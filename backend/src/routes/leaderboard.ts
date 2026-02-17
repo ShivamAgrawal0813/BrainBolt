@@ -3,6 +3,8 @@ import { getPool } from '../db/pool';
 import { getRedis } from '../db/redis';
 import { logger } from '../logger';
 
+import { rateLimiter } from '../middleware/rateLimit';
+
 const router = express.Router();
 
 // Sync interval (5 minutes)
@@ -132,7 +134,7 @@ async function resolveUsernames(pool: any, userIds: string[]): Promise<Map<strin
 }
 
 // GET /v1/leaderboard/score
-router.get('/score', async (req, res, next) => {
+router.get('/score', rateLimiter(30, 60), async (req, res, next) => {
   try {
     const { limit, offset } = parseLimitOffset(req.query);
     const redis = getRedis();
@@ -184,7 +186,7 @@ router.get('/score', async (req, res, next) => {
 });
 
 // GET /v1/leaderboard/streak
-router.get('/streak', async (req, res, next) => {
+router.get('/streak', rateLimiter(30, 60), async (req, res, next) => {
   try {
     const { limit, offset } = parseLimitOffset(req.query);
     const redis = getRedis();
