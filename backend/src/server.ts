@@ -93,6 +93,9 @@ app.post('/answers/submit', async (req, res, next) => {
 // Mount new quiz v1 routes
 import quizRouter from './routes/quiz';
 app.use('/v1/quiz', quizRouter);
+// Mount leaderboard routes
+import leaderboardRouter from './routes/leaderboard';
+app.use('/v1/leaderboard', leaderboardRouter);
 
 // error handler
 app.use((err: any, _req: any, res: any, _next: any) => {

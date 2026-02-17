@@ -5,6 +5,7 @@ import { getPool } from '../db/pool';
 import { getRedis } from '../db/redis';
 import { logger } from '../logger';
 import { BadRequest, Conflict, TooManyRequests, ApiError } from '../errors';
+import { updateLeaderboardsDb, updateLeaderboardsRedis } from './leaderboard';
 import * as AE from '../core/adaptiveEngine';
 
 const router = express.Router();
@@ -43,6 +44,7 @@ function mapDbRowToState(row: any): AE.UserState & { stateVersion: number; lastQ
 router.get('/next', async (req, res, next) => {
   try {
     const user = (req as any).user;
+    
     if (!user || !user.id) throw new ApiError(401, 'Unauthorized', 'UNAUTHORIZED');
     const userId = String(user.id);
 
@@ -354,21 +356,10 @@ router.post('/answer', async (req, res, next) => {
       // capture updated state_version to return without an extra DB roundtrip
       updatedStateVersion = Number(updateRes.rows[0].state_version);
 
-      // c) UPSERT leaderboard_score
-      await client.query(
-        `INSERT INTO leaderboard_score (user_id, total_score, last_updated_at)
-         VALUES ($1, $2, NOW())
-         ON CONFLICT (user_id) DO UPDATE SET total_score = EXCLUDED.total_score, last_updated_at = NOW()` ,
-        [userId, newState.totalScore]
-      );
-
-      // d) UPSERT leaderboard_streak
-      await client.query(
-        `INSERT INTO leaderboard_streak (user_id, max_streak, last_updated_at)
-         VALUES ($1, $2, NOW())
-         ON CONFLICT (user_id) DO UPDATE SET max_streak = EXCLUDED.max_streak, last_updated_at = NOW()` ,
-        [userId, newState.maxStreak]
-      );
+      // c) & d) UPDATES: delegate to leaderboard DB helper using the same client
+      // This keeps leaderboard DB upserts inside the caller transaction to ensure
+      // consistency. Redis updates will be applied after commit.
+      await updateLeaderboardsDb(client, userId, newState.totalScore, newState.maxStreak);
 
       await client.query('COMMIT');
 
@@ -389,9 +380,8 @@ router.post('/answer', async (req, res, next) => {
           await redis.set(userKey, JSON.stringify(mapDbRowToState(freshDb.rows[0])), 'EX', USER_STATE_TTL);
         }
 
-        // update leaderboards
-        await redis.zadd('leaderboard:score', newState.totalScore, userId);
-        await redis.zadd('leaderboard:streak', newState.maxStreak, userId);
+        // update leaderboards (use helper for Redis updates)
+        await updateLeaderboardsRedis(userId, newState.totalScore, newState.maxStreak);
       }
     } catch (err) {
       logger.error({ err, userId }, 'redis update failed after DB commit — scheduling reconciliation');
@@ -454,6 +444,101 @@ router.post('/answer', async (req, res, next) => {
     if (client) {
       try { client.release(); } catch (_) {}
     }
+  }
+});
+
+// GET /v1/quiz/metrics
+router.get('/metrics', async (req, res, next) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !user.id) throw new ApiError(401, 'Unauthorized', 'UNAUTHORIZED');
+    const userId = String(user.id);
+
+    const redis = getRedis();
+    const pool = getPool();
+    if (!pool) throw new ApiError(500, 'Database not configured', 'INTERNAL_ERROR');
+
+    const userKey = `user:${userId}:state`;
+
+    // Load user_state (Redis first)
+    let userStateRow: any = null;
+    try {
+      if (redis) {
+        const s = await redis.get(userKey);
+        if (s) userStateRow = JSON.parse(s);
+      }
+    } catch (err) {
+      logger.warn({ err, userId }, 'redis read failed for metrics (falling back to DB)');
+    }
+
+    if (!userStateRow) {
+      const r = await pool.query('SELECT * FROM user_state WHERE user_id = $1', [userId]);
+      if (r.rowCount === 0) {
+        // return defaults
+        userStateRow = mapDbRowToState({ current_difficulty: 5, current_streak: 0, max_streak: 0, total_score: 0, correct_answers: 0, questions_answered: 0, performance_window: [], confidence_score: 0, state_version: 1, last_answered_at: null, last_question_id: null });
+      } else {
+        userStateRow = mapDbRowToState(r.rows[0]);
+      }
+    }
+
+    const currentDifficulty = userStateRow.currentDifficulty;
+    const streak = userStateRow.streak;
+    const maxStreak = userStateRow.maxStreak;
+    const totalScore = userStateRow.totalScore;
+
+    const answered = Number(userStateRow.totalAnswers || 0);
+    const correct = Number(userStateRow.correctAnswers || 0);
+    const accuracy = answered > 0 ? (correct / answered) * 100 : 0;
+
+    // difficultyHistogram
+    const dh = await pool.query(
+      `SELECT difficulty_level, COUNT(*) AS answered, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS correct
+       FROM answer_log
+       WHERE user_id = $1
+       GROUP BY difficulty_level
+       ORDER BY difficulty_level`,
+      [userId]
+    );
+
+    const difficultyHistogram = dh.rows.map((r: any) => ({
+      difficulty: Number(r.difficulty_level),
+      answered: Number(r.answered),
+      correct: Number(r.correct),
+      accuracy: Number(r.answered) > 0 ? (Number(r.correct) / Number(r.answered)) * 100 : 0,
+    }));
+
+    // recentPerformance: last 10 answers
+    const rp = await pool.query(
+      `SELECT is_correct FROM answer_log WHERE user_id = $1 ORDER BY answered_at DESC LIMIT 10`,
+      [userId]
+    );
+    const last10 = rp.rows.map((r: any) => Boolean(r.is_correct));
+    const last10Count = last10.length;
+    const last10Correct = last10.filter(Boolean).length;
+    const last10Accuracy = last10Count > 0 ? (last10Correct / last10Count) * 100 : 0;
+    let trend: 'improving' | 'declining' | 'stable' = 'stable';
+    if (last10Accuracy >= 70) trend = 'improving';
+    else if (last10Accuracy <= 40) trend = 'declining';
+
+    const recentPerformance = {
+      last10Answers: {
+        correct: last10Correct,
+        accuracy: last10Accuracy,
+        trend,
+      },
+    };
+
+    return res.json({
+      currentDifficulty,
+      streak,
+      maxStreak,
+      totalScore,
+      accuracy,
+      difficultyHistogram,
+      recentPerformance,
+    });
+  } catch (err) {
+    next(err);
   }
 });
 
